@@ -1,0 +1,44 @@
+
+#########Iniciar Spark#############3
+start-dfs.sh
+start-spark.sh
+
+pyspark --master spark://esclava1R:7077
+
+#####################SVD##################
+
+from pyspark.mllib.linalg import Vectors
+from pyspark.mllib.linalg.distributed import RowMatrix
+
+
+rows = sc.parallelize([
+     Vectors.dense(4, 4, 0, 2, 2),
+     Vectors.dense(4,0,0,3,3),
+     Vectors.dense(4, 0, 0, 1, 1),
+     Vectors.dense(1, 1, 1, 2, 0),
+     Vectors.dense(2, 2, 2, 0, 0),
+     Vectors.dense(5, 5, 5, 0, 0),
+     Vectors.dense(1, 1, 1, 0, 0)
+])
+
+mat = RowMatrix(rows)
+
+#Calcular los k primeros valores singulares correspondientes a los vectores singulares
+svd = mat.computeSVD(k, computeU=True)
+U = svd.U       
+s = svd.s       
+V = svd.V       
+
+collected = U.rows.collect()
+    
+################PCA#############
+
+#Calcula los primeros 4 componentes principales
+#Los componentes principales son almacenados en una matriz
+
+pc = mat.computePrincipalComponents(4)
+
+# Project the rows to the linear space spanned by the top 4 principal components.
+projected = mat.multiply(pc)
+
+collected = projected.rows.collect()
